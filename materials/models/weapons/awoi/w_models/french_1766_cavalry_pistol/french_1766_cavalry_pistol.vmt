@@ -1,0 +1,6 @@
+"VertexLitGeneric"
+{
+	"$baseTexture" "models\weapons\AWoI\w_models\french_1766_cavalry_pistol/french_1766_cavalry_pistol"
+	//"$bumpmap" "models\weapons\AWoI\w_models\french_1766_cavalry_pistol/french_1766_cavalry_pistol_n"
+	"$nocull" "1"
+}

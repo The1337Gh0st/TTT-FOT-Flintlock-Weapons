@@ -1,0 +1,5 @@
+"vertexlitgeneric"
+{
+	"$basetexture" "models\weapons\awoi\v_models\hands/sleeve"
+	"$bumpmap" "models\weapons\awoi\v_models\hands/sleeve_n"
+}
