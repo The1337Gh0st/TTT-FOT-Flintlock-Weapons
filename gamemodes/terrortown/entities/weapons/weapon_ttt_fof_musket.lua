@@ -19,7 +19,10 @@ SWEP.Primary.Delay = 0.8
 SWEP.Primary.Cone = 0
 SWEP.Primary.Recoil = 12
 SWEP.Primary.ClipSize = 1
+
 SWEP.Primary.Sound = "musket_fire"
+SWEP.Primary.Sound_CL = "musket_fire"
+
 SWEP.FalloffDisabled = true
 SWEP.IsTwoHandedGun = true
 
@@ -68,221 +71,34 @@ SWEP.UseRifleAim = true
 
 SWEP.AutoSpawnable = false
 
-local frametime, ang = engine.TickInterval(), Angle()
+--cool smoke effect
 
--- hacky fix for shooting sound not working properly due to the original weapon being janky, while also adding in the cool smoke effect
+function SWEP:ShootBullet(dmg)
 
-function SWEP:PrimaryAttack(worldsnd)
-	if self.PumpTime and self:GetNeedPump()
-		or (self.GetThrowing and self:GetThrowing() ~= 0)
-		or not self:CanPrimaryAttack()
-	then
-		return
-	end
-
-	local owner = self:GetOwner()
-
-	if not IsValid(owner) then
-		return
-	end
-
-	local curtime = CurTime()
-	local curatt = self:GetNextPrimaryFire()
-	local diff = curtime - curatt
-
-	if diff > frametime or diff < 0 then
-		curatt = curtime
-	end
-
-	local fanning = self:IsFanning()
-
-	local nextpf = curatt + (
-		fanning and self.Primary.FanDelay or self.Primary.Delay
-	) - (self.PumpTime or 0)
-
-	self.fNextPrimaryFire = nextpf
-
-	self:SetNextPrimaryFire(nextpf)
-
-	self:SetQueueReload(false)
-
-	if self.PumpTime then
-		self:SetNeedPump(true)
-	end
-
-	if worldsnd then
-		sound.Play("musket_fire", self:GetShootPos())
-	elseif self.IsSilent then
-		self:EmitSound("musket_fire")
-	elseif CLIENT then
-		if not self.Primary.Sound_CL then
-			self.Primary.Sound_CL = "musket_fire"
-		end
-
-		self:EmitSound("musket_fire")
-	else
-		self:EmitSound("musket_fire")
-
-		TTT_FOF.ShootSound(owner, "musket_fire")
-	end
-	
-	--cool smoke effect
-	
-	local effect = EffectData();
+local effect = EffectData();
 	local Forward = self.Owner:GetForward()
 	local Right = self.Owner:GetRight()
 	effect:SetOrigin(self.Owner:GetShootPos()+(Forward*65)+(Right*5))
 	effect:SetNormal( self.Owner:GetAimVector());
 	util.Effect( "effect_awoi_smoke", effect );
 
-	if self.DryFireAnim and self:Clip1() == 1 then
-		self:SendWeaponAnim(self.DryFireAnim)
-	elseif fanning then
-		self:SendWeaponAnim(ACT_VM_SECONDARYATTACK)
-	else
-		self:SendWeaponAnim(self.PrimaryAnim)
-
-		if self.ShootSequence then
-			local vm = self:GetOwnerViewModel()
-
-			if vm then
-				vm:SendViewModelMatchingSequence(self.ShootSequence)
-			end
-		end
-	end
-
-	if self.AttackAnimSpeed then
-		self:SetVMSpeed(self.AttackAnimSpeed)
-	end
-
-	if self.ThirdPersonSounds then
-		self.NextThirdPersonSound = 1
-	end
-
-	owner:MuzzleFlash()
-
-	owner:SetAnimation(PLAYER_ATTACK1)
-
-	self:ShootBullet(fanning and self.Primary.FanDamage or self.Primary.Damage)
-
-	self:TakePrimaryAmmo(1)
-
-	if not owner.ViewPunch then
-		return
-	end
-
-	local recoil = self.AimRecoil
-		and TTT_FOF.RemapClamp(
-			self:GetAimAmt(), 0, 1, self.Primary.Recoil, self.AimRecoil
-		) or self.Primary.Recoil
-
-	if fanning then
-		recoil = recoil + 2
-	end
-
-	ang:SetUnpacked(
-		-recoil,
-		util.SharedRandom(self.ClassName, -0.2, 0.2) * recoil,
-		0
-	)
-
-	owner:ViewPunch(ang)
+    return self.BaseClass.ShootBullet(self, dmg)
 end
 
--- have to redo the reload code to make it have sounds aaa
+-- emit reload sound
 
-function SWEP:Reload()
-	if self:Clip1() == self.Primary.ClipSize then
-		return
-	end
-
-	local curtime = CurTime()
-
-	local reloading = self:GetReloading()
-
-	if reloading ~= 0
-		and curtime <= reloading
-	then
-		return
-	end
-
-	if curtime <= self:GetNextPrimaryFire()
-		or self.PumpTime and self:GetNeedPump()
-	then
-		self:SetQueueReload(true)
-		return
-	end
-
+function SWEP:PreReload()
 self.Weapon:EmitSound( "musket_reload" )
 
-	self:SendWeaponAnim(
-		self.ReloadAnim
-		or self.ReloadsSingly and ACT_SHOTGUN_RELOAD_START
-		or ACT_VM_RELOAD
-	)
-
-	if self.ThirdPersonSounds then
-		self.NextThirdPersonSound = 1
-	end
-
-	local owner = self:GetOwner()
-
-	if IsValid(owner) then
-		local vm = self:GetOwnerViewModel(owner)
-
-		if vm then
-			if self.ReloadSequence then
-				vm:SendViewModelMatchingSequence(self.ReloadSequence)
-			end
-
-			if self.ReloadAnimSpeed then
-				vm:SetPlaybackRate(self.ReloadAnimSpeed)
-			end
-		end
-	end
-
-	if not self.ReloadTime then
-		self.ReloadTime = self:SequenceDuration() / (self.ReloadAnimSpeed or 1)
-	end
-
-	local relfin = curtime + self.ReloadTime
-
-	if self.ReloadsSingly then
-		self:SetReloading(relfin)
-
-		self:SetNextPrimaryFire(relfin + 0.25)
-	else
-		self:SetInserting(true)
-
-		self:SetReloading(relfin - 0.25)
-
-		self:SetNextPrimaryFire(relfin)
-	end
-
-	self:SetToggleAim(false)
-
-	if self.PreReload then
-		self:PreReload()
-	end
 end
-
---fix to make reload sounds not stay on drop / weapon swap
-
-local ttt_fof_deathreload = GetConVar("ttt_fof_deathreload")
 
 function SWEP:PreDrop(death)
-	if death and ttt_fof_deathreload:GetBool() then
-		self:SetClip1(self.Primary.ClipSize)
-
-		if self.PumpTime then
-			self:SetNeedPump(false)
-		end
-		self:StopSound("musket_reload")
-	end
+    self:EmitSound("musket_reload")
 end
 
-function SWEP:Holster()
-self:StopSound("musket_reload")
-return true
+function SWEP:PreDrop(death)
+    self:StopSound("musket_reload")
+
+    return self.BaseClass.PreDrop(self, death)
 end
 
