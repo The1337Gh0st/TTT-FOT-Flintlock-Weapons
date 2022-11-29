@@ -102,3 +102,8 @@ function SWEP:PreDrop(death)
     return self.BaseClass.PreDrop(self, death)
 end
 
+function SWEP:Holster()
+self:StopSound("musket_reload")
+return true
+end
+

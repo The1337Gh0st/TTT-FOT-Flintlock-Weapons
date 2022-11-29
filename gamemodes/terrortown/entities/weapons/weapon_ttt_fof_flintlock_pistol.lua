@@ -101,4 +101,9 @@ function SWEP:PreDrop(death)
     return self.BaseClass.PreDrop(self, death)
 end
 
+function SWEP:Holster()
+self:StopSound("flintlock_reload")
+return true
+end
+
 

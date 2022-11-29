@@ -1,0 +1,10 @@
+"vertexlitgeneric"
+{
+	"$baseTexture" "models\weapons/blunderbus"
+	"$bumpMap" "models\weapons/blunderbus_normal"
+	"$phong" "1"
+	"$phongexponent" "50"
+	"$phongboost" "3"
+	"$phongfresnelranges"	"[.75 1 1.25]"
+	"$phongalbedotint" "1"	
+}
