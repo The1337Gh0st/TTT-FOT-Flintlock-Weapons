@@ -1,3 +1,5 @@
+CreateConVar( "ttt_fof_flintlock_blunderbuss_smoke", 0 ,{ FCVAR_ARCHIVE, FCVAR_NOTIFY }, "whether or not the blunderbuss emits smoke upon firing (0 by default)" )
+
 SWEP.Base = "weapon_ttt_fof_base"
 
 SWEP.PrintName = "Blunderbuss"
@@ -7,10 +9,10 @@ SWEP.PrintName = "Blunderbuss"
 SWEP.Icon = "vgui/tttfof/weapons/blunderbuss"
 SWEP.IconLetter = "a"
 
-SWEP.Primary.Damage = 8
-SWEP.Primary.HeadshotDamage = 11
-SWEP.Primary.HullDamage = 2
-SWEP.Primary.NumShots = 10
+SWEP.Primary.Damage = 80
+SWEP.Primary.HeadshotDamage = 100
+--SWEP.Primary.HullDamage = 2
+SWEP.Primary.NumShots = 1
 SWEP.Primary.Delay = 0.8
 SWEP.Primary.Cone = 0.1
 SWEP.Primary.Recoil = 10
@@ -19,7 +21,7 @@ SWEP.Primary.ClipSize = 1
 SWEP.Primary.Sound = "blunderbuss_fire"
 SWEP.Primary.Sound_CL = "blunderbuss_fire"
 
-SWEP.FalloffDisabled = false
+SWEP.FalloffDisabled = true
 SWEP.IsTwoHandedGun = true
 
 SWEP.DryFireSound = "TTTFOF_Coachgun.Empty"
@@ -31,9 +33,9 @@ SWEP.ViewModel				= "models/weapons/blunderbus.mdl"	-- Weapon view model
 SWEP.WorldModel				= "models/weapons/w_blunderbus.mdl"	-- Weapon world model
 SWEP.LimbshotMultiplier = 1
 
-SWEP.ShotgunHullDist = 180
+--SWEP.ShotgunHullDist = 180
 
-SWEP.FalloffStart = 75
+SWEP.FalloffStart = 125
 SWEP.FalloffHalf = 500
 SWEP.FalloffEnd = 900
 
@@ -53,7 +55,7 @@ SWEP.ReloadAnimSpeed = 0.7
 
 SWEP.DeployTime = 1
 
-SWEP.ConeAim = 0.08
+SWEP.ConeAim = 0.07
 SWEP.ConeRun = 0.075
 SWEP.ConeJump = 0.15
 
@@ -72,22 +74,54 @@ SWEP.spawnType = WEAPON_TYPE_SHOTGUN
 SWEP.UseRifleAim = true
 
 SWEP.AutoSpawnable = true
+-- name of the cvar used to toggle whether it should spawn or not
+SWEP.AutoSpawnableConVar = "ttt_fof_spawnwep_blunderbuss"
+
+SWEP.DeadEyeCone = 0.025
+SWEP.DeadEyeShootSequence = 1
+SWEP.DeadEyeAttackDelay = 0.8
+SWEP.DeadEyeAttackAnimSpeed = 1.5
+SWEP.DeadEyeDeployTime = 0.66
+SWEP.DeadEyeDeployAnimSpeed = 1.8
+
+SWEP.SilencerModelPath = "models/ttt_fof/silencer_detached_tmp.mdl"
+SWEP.SilencerOffsetPos = Vector(-12, 4.8, -1.5)
+SWEP.SilencerOffsetAng = Angle(0, -5, 0)
+
+SWEP.HolsteredOffsetPos = Vector(-5, 0.3, 0)
+
+--SWEP.SilencerOffsetPos = Vector(-0.3, 0, -20)
+--SWEP.SilencerOffsetAng = Angle(0, -5, 0)
+
+--SWEP.SilencerOffsetPos = Vector(0.014, -6.128, -1.609)
+--SWEP.SilencerOffsetAng = Angle(-0, -90, 90)
+
+--SWEP.SilencerOffsetPos = false
+--SWEP.SilencerOffsetAng = false
+
+--SWEP.SilencerOffsetPos = false
+--SWEP.SilencerOffsetAng = false
+--SWEP.SilencerVMBone = false
+--SWEP.SilencerVMOffsetPos = false
+--SWEP.SilencerVMOffsetAng = false
 
 
 
 --cool smoke effect
 
---function SWEP:ShootBullet(dmg)
+function SWEP:ShootBullet(dmg)
 
---local effect = EffectData();
---	local Forward = self.Owner:GetForward()
---	local Right = self.Owner:GetRight()
---	effect:SetOrigin(self.Owner:GetShootPos()+(Forward*65)+(Right*5))
---	effect:SetNormal( self.Owner:GetAimVector());
---	util.Effect( "effect_awoi_smoke", effect );
+if GetConVar("ttt_fof_flintlock_blunderbuss_smoke"):GetBool() then
+local effect = EffectData();
+	local Forward = self.Owner:GetForward()
+	local Right = self.Owner:GetRight()
+	effect:SetOrigin(self.Owner:GetShootPos()+(Forward*65)+(Right*5))
+	effect:SetNormal( self.Owner:GetAimVector());
+	util.Effect( "effect_awoi_smoke", effect );
+	end
 
-  --  return self.BaseClass.ShootBullet(self, dmg)
---end
+    return self.BaseClass.ShootBullet(self, dmg)
+end
 
 -- emit reload sound
 
@@ -111,43 +145,15 @@ self:StopSound("blunderbuss_reload")
 return true
 end
 
--- code to make weapon not go into the crotch when held
+SWEP.NewRightHandPos = Vector(2.4, -0.5, -3.5)
+SWEP.NewRightHandAng = Angle(0, -6, 177)
 
-SWEP.Offset = {
-Pos = {
-Up = -2.5,
-Right = 1.5,
-Forward = 4,
-},
-Ang = {
-Up = 0,
-Right = -7,
-Forward = 180,
-}
-}
+if SERVER then
+	return
+end
 
-function SWEP:DrawWorldModel( )
-        local hand, offset, rotate
+function SWEP:GetViewModelPosition(pos, ang)
+	pos:Sub(ang:Up())
 
-        local pl = self:GetOwner()
-
-        if IsValid( pl ) then
-                        local boneIndex = pl:LookupBone( "ValveBiped.Bip01_R_Hand" )
-                        if boneIndex then
-                                local pos, ang = pl:GetBonePosition( boneIndex )
-                                pos = pos + ang:Forward() * self.Offset.Pos.Forward + ang:Right() * self.Offset.Pos.Right + ang:Up() * self.Offset.Pos.Up
-
-                                ang:RotateAroundAxis( ang:Up(), self.Offset.Ang.Up)
-                                ang:RotateAroundAxis( ang:Right(), self.Offset.Ang.Right )
-                                ang:RotateAroundAxis( ang:Forward(),  self.Offset.Ang.Forward )
-
-                                self:SetRenderOrigin( pos )
-                                self:SetRenderAngles( ang )
-                                self:DrawModel()
-                        end
-        else
-                self:SetRenderOrigin( nil )
-                self:SetRenderAngles( nil )
-                self:DrawModel()
-        end
+	return self.BaseClass.GetViewModelPosition(self, pos, ang)
 end

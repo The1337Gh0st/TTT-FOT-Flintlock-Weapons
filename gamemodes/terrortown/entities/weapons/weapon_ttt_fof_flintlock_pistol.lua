@@ -1,3 +1,6 @@
+
+CreateConVar( "ttt_fof_flintlock_pistol_smoke", 1 ,{ FCVAR_ARCHIVE, FCVAR_NOTIFY }, "whether or not the flintlock pistol emits smoke upon firing (1 by default)" )
+
 SWEP.Base = "weapon_ttt_fof_base"
 
 SWEP.PrintName = "Flintlock Pistol"
@@ -32,7 +35,10 @@ SWEP.MinGunThrowDamage = 39
 SWEP.DryFireSound = "TTTFOF_Pistol.Empty"
 
 SWEP.Kind = WEAPON_EQUIP
-SWEP.CanBuy = {ROLE_DETECTIVE}
+SWEP.CanBuy = CreateConVar(
+	"ttt_fof_flintlock_pistol_enabled", "1", FCVAR_ARCHIVE + FCVAR_NOTIFY + FCVAR_REPLICATED,
+	"server needs a map change to apply new value"
+):GetBool() and {ROLE_DETECTIVE} or {}
 
 SWEP.UseHands = true
 SWEP.ViewModelFlip = false
@@ -74,12 +80,14 @@ SWEP.AutoSpawnable = false
 
 function SWEP:ShootBullet(dmg)
 
+if GetConVar("ttt_fof_flintlock_pistol_smoke"):GetBool() then
 local effect = EffectData();
 	local Forward = self.Owner:GetForward()
 	local Right = self.Owner:GetRight()
 	effect:SetOrigin(self.Owner:GetShootPos()+(Forward*65)+(Right*5))
 	effect:SetNormal( self.Owner:GetAimVector());
 	util.Effect( "effect_awoi_smoke_pistol", effect );
+	end
 
     return self.BaseClass.ShootBullet(self, dmg)
 end

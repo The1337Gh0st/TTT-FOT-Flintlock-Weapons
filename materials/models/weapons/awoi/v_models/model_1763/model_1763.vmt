@@ -1,6 +1,0 @@
-"VertexLitGeneric"
-{
-	"$baseTexture" "models\weapons\AWoI\w_models\model_1763/model_1763"
-	//"$bumpmap" "models\weapons\AWoI\w_models\model_1763/model_1763_n"
-	"$nocull" "1"
-}
